@@ -4,10 +4,9 @@
 <head>
 	<meta charset="utf-8">
 
-	<title>reveal.js – The HTML Presentation Framework</title>
+	<title>Taming asynchronicity with reactive programming</title>
 
-	<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
-	<meta name="author" content="Hakim El Hattab">
+	<meta name="author" content="Valentin Robert">
 
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,7 +17,7 @@
 	<link rel="stylesheet" href="css/theme/night.css" id="theme">
 
 	<!-- Code syntax highlighting -->
-	<link rel="stylesheet" href="lib/css/zenburn.css">
+	<link rel="stylesheet" href="lib/css/agate.css">
 
 	<!-- Printing and PDF exports -->
 	<script>
@@ -42,19 +41,20 @@
 		<div class="slides">
 
 			<section>
-				<h1>Taming asynchronicity with reactive programming</h1>
-				<h3>The HTML Presentation Framework</h3>
+				<h1>Taming asynchronicity</h1>
+				<h2> with reactive programming</h2>
 				<p>
-					<small>Created by <a href="http://hakim.se">Hakim El Hattab</a> / <a href="http://twitter.com/hakimel">@hakimel</a></small>
+					<small>Created by <a href="http://cs.ucsd.edu/~vrobert">Valentin Robert</a> (<a href="https://github.com/Ptival/learn-from-peers-rxjs">source</a>)</small>
 				</p>
 			</section>
 
 			<section>
-				<h2>Testing</h2>
-				<pre><code class="hljs" data-trim contenteditable>
-Rx.Observable.range(0, 5).subscribe((x) => output(x));
+				<h2>Playground 1</h2>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+let x = Rx.Observable
+  .interval(100)
+  .subscribe((x) => output(x));
 			</code></pre>
-			<pre><code class="hljs output" data-trim></code></pre>
 			</section>
 
 		</div>
@@ -110,15 +110,34 @@ Rx.Observable.range(0, 5).subscribe((x) => output(x));
 
 		$(".hljs").attr("spellcheck", false);
 
-		let codeChange = Rx.Observable.fromEvent(document, "keydown");
-		let output = (s) => {
-			let old = $(".hljs.output").text();
-			$(".hljs.output").text(old + "// " + s + "\n");
-			hljs.highlightBlock($(".hljs.output")[0]);
-		}
-		codeChange.debounce(1000).subscribe(() => {
-			console.log("out");
+		let codeChange = Rx.Observable.fromEvent(document, "keyup");
+		let codeUnfocus = Rx.Observable.fromEvent(document, "focusout");
+
+		codeChange.debounce(250).subscribe(() => {
+			let currentInput = $(Reveal.getCurrentSlide()).find(".input");
+			$(Reveal.getCurrentSlide()).find(".output").parent().remove();
+			let currentOutput = $("<code>").addClass("output");
+			$("<pre>").append(currentOutput).appendTo($(Reveal.getCurrentSlide()));
+			//hljs.highlightBlock(currentInput[0]);
+			let code = currentInput.text();
+			try {
+				let output = (s) => {
+					let currentText = currentOutput.text();
+					currentOutput.text(currentText + "// " + s + "\n");
+					hljs.highlightBlock(currentOutput[0]);
+					Reveal.layout();
+				};
+				eval(code);
+			} catch (e) {
+				output(e);
+			}
 		});
+
+		codeUnfocus.subscribe(() => {
+				let currentInput = $(Reveal.getCurrentSlide()).find(".input");
+				hljs.highlightBlock(currentInput[0]);
+		});
+
 	</script>
 
 </body>
