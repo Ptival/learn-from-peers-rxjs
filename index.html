@@ -111,7 +111,6 @@ let x = Rx.Observable
 		$(".hljs").attr("spellcheck", false);
 
 		let codeChange = Rx.Observable.fromEvent(document, "keyup");
-		let codeUnfocus = Rx.Observable.fromEvent(document, "focusout");
 
 		codeChange.debounce(250).subscribe(() => {
 			let currentInput = $(Reveal.getCurrentSlide()).find(".input");
@@ -132,6 +131,8 @@ let x = Rx.Observable
 				output(e);
 			}
 		});
+
+		let codeUnfocus = Rx.Observable.fromEvent(document, "focusout");
 
 		codeUnfocus.subscribe(() => {
 				let currentInput = $(Reveal.getCurrentSlide()).find(".input");
