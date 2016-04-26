@@ -54,6 +54,9 @@
 				<p>
 					<small>Created by <a href="http://cs.ucsd.edu/~vrobert">Valentin Robert</a> (<a href="https://github.com/Ptival/learn-from-peers-rxjs">source</a>)</small>
 				</p>
+				<p>
+					<small>Examples inspired by <a href="https://github.com/Reactive-Extensions/RxJS/tree/master/examples">RxJS examples</a></small>
+				</p>
 			</section>
 
 			<section>
@@ -202,6 +205,20 @@ Rx.Observable.interval(100)
 			</section>
 
 			<section>
+				<h2>Observable API</h2>
+				<p>Check out <a href="http://rxmarbles.com/">RxMarbles</a>!!!</p>
+				<p>Or dive into <a href="https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/core/observable.md">the official API</a>...</p>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+Rx.Observable.range(1, 5)
+//             .filter(x => x%2 === 1)
+//             .delay(x => Rx.Observable.just(x).delay(x*1000))
+//             .flatMap(x => _.repeat(x, x))
+//             .map(x => _.repeat(x, x))
+             .subscribe(output);
+			</code></pre>
+			</section>
+
+			<section>
 				<h2>Example: autocomplete</h2>
 				<div class="row-fluid">
         	<label for="wikipedia-input">Wikipedia Search: </label>
@@ -242,7 +259,7 @@ Rx.Observable.fromEvent($input, "keyup")
 
 			<section>
 				<h2>Example: Konami code</h2>
-				<p id="konami" style="display: flex; justify-content: center;">
+				<p style="display: flex; justify-content: center;">
 					<kbd class="keyboard-key nowrap">↑</kbd>
 					<kbd class="keyboard-key nowrap">↑</kbd>
 					<kbd class="keyboard-key nowrap">↓</kbd>
@@ -254,6 +271,7 @@ Rx.Observable.fromEvent($input, "keyup")
 					<kbd class="keyboard-key nowrap">B</kbd>
 					<kbd class="keyboard-key nowrap">A</kbd>
 				</p>
+				<p id="konami"></p>
 				<pre contenteditable="true" id="konami-input">                              Input the Konami code here.</pre>
 				<pre><code class="typescript hljs input" data-trim contenteditable>
 const konamiArray = [ 38, 38, 40, 40, 37, 39, 37, 39, 66, 65 ];
@@ -280,7 +298,7 @@ keyWindows$.flatMap(w => w.toArray())
 
 keyWindows$.flatMap(w => w.sequenceEqual(konami$))
            .filter(equal => equal)
-           .subscribe(() => $("#konami-input").text('KONAMI!'));
+           .subscribe(() => $("#konami").html("!!! KONAMI !!!").show().fadeOut(2000));
 			</code></pre>
 			</section>
 
@@ -356,7 +374,9 @@ keyWindows$.flatMap(w => w.sequenceEqual(konami$))
 			let code = currentInput.text();
 			let output = (s) => {
 				let currentText = currentOutput.text();
-				currentOutput.text(currentText + "// " + s + "\n");
+				let lines = currentText.split("\n");
+				let shortenedText = lines.slice(Math.max(0, lines.length - 10)).join("\n");
+				currentOutput.text(shortenedText + "// " + s + "\n");
 				hljs.highlightBlock(currentOutput[0]);
 				Reveal.layout();
 			};
