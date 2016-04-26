@@ -161,20 +161,87 @@ Promise.all([c, d]).then(cd => doSomething(...cd));
 			</section>
 
 			<section>
-				<p>Promises are great to deal with:</p>
+				<p><span style="color: lightgreen">Promises</span> are great to deal with:</p>
 				<ul>
 					<li><span style="color: red">one</span> value</li>
-					<li>obtained asynchronously</li>
-					<li>whose acquisition might fail</li>
+					<li>obtained <span style="color: red">async</span>hronously</li>
+					<li>whose acquisition might <span style="color: red">fail</span></li>
 				</ul>
 			</section>
 
 			<section>
-				<p>But we often need to deal with sequences of asynchronous values!</p>
+				<p><span style="color: lightgreen">Observables</span> are great to deal with:</p>
+				<ul>
+					<li><span style="color: red">one, many, or infinitely many</span> values</li>
+					<li>obtained <span style="color: red">async</span>hronously</li>
+					<li>whose acquisition might <span style="color: red">fail</span></li>
+				</ul>
 			</section>
 
 			<section>
-				<h2>Konami code</h2>
+				<h2>Observable</h2>
+				<p>A first-class value to represent a stream of values</p>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+const observable = Rx.Observable.fromArray([1, 2, 3]);
+
+observable.subscribe(
+  output,                   // what to do when an item is emitted
+  output,                   // what to do when the stream fails
+  () => output("Complete")  // what to do when the stream completes
+);
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Observable</h2>
+				<p>Some observables never fail, or never complete.</p>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+Rx.Observable.interval(100)
+             .subscribe(output);
+			</code></pre>
+			</section>
+
+			<section>
+				<h2>Example: autocomplete</h2>
+				<div class="row-fluid">
+        	<label for="wikipedia-input">Wikipedia Search: </label>
+        	<input type="text" id="wikipedia-input" style="vertical-align: middle; font-size: 30px; height: 40px" placeholder="Enter Query...">
+				</div>
+    		<div class="row-fluid">
+      		<ul id="wikipedia-output"></ul>
+    		</div>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+const searchWikipediaPromise = term => $.ajax({
+  url: 'http://en.wikipedia.org/w/api.php',
+  dataType: 'jsonp',
+  data: { action: 'opensearch', format: 'json', search: term }
+}).promise();
+
+const nbRetries = 100, delayBetweenRetries = 1000;
+
+const searchWikipedia$ = term =>
+  Rx.Observable.defer(() => searchWikipediaPromise(term))
+               .retryWhen(e => e.delay(delayBetweenRetries))
+               .take(nbRetries);
+
+const $input = $("#wikipedia-input"), $output = $("#wikipedia-output");
+
+Rx.Observable.fromEvent($input, "keyup")
+  .map(e => e.target.value)
+  .filter(t => t.length > 2)
+  .debounce(750)
+  .distinctUntilChanged()
+  .flatMapLatest(searchWikipedia$)
+  .subscribe(
+    data => $output.empty()
+                   .append(_(data[1]).take(3).map(v => $("&lt;li>").text(v)).value()),
+    error => $output.text(`Error: ${error.status} ${error.statusText}`)
+  );
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Example: Konami code</h2>
 				<p id="konami" style="display: flex; justify-content: center;">
 					<kbd class="keyboard-key nowrap">↑</kbd>
 					<kbd class="keyboard-key nowrap">↑</kbd>
@@ -194,10 +261,10 @@ const konamiArray = [ 38, 38, 40, 40, 37, 39, 37, 39, 66, 65 ];
 const konami$ = Rx.Observable.fromArray(konamiArray);
 
 $("#konami-input").off("keyup");
-const keyUp$ = Rx.Observable.fromEvent($("#konami-input"), "keyup")
-                            .map(e => e.keyCode)
-                            .startWith(..._.repeat(0, 10));
-const keyWindows$ = keyUp$.windowWithCount(10, 1);
+const keyWindows$ = Rx.Observable.fromEvent($("#konami-input"), "keyup")
+                                 .map(e => e.keyCode)
+                                 .startWith(..._.repeat(0, 10))
+                                 .windowWithCount(10, 1);
 
 const longestMatch = (w, target) => {
   const slice = _.takeRight(w, target.length);
@@ -211,19 +278,9 @@ keyWindows$.flatMap(w => w.toArray())
             $("kbd").slice(a.length).css("background-color", "red");
           });
 
-keyWindows$
-  .flatMap(w => w.sequenceEqual(konami$))
-  .filter(equal => equal)
-  .subscribe(() => $("#konami-input").text('KONAMI!'));
-			</code></pre>
-			</section>
-
-			<section>
-				<h2>Playground 1</h2>
-				<pre><code class="typescript hljs input" data-trim contenteditable>
-let x = Rx.Observable
-  .interval(100)
-  .subscribe((x) => output(x));
+keyWindows$.flatMap(w => w.sequenceEqual(konami$))
+           .filter(equal => equal)
+           .subscribe(() => $("#konami-input").text('KONAMI!'));
 			</code></pre>
 			</section>
 
@@ -289,6 +346,9 @@ let x = Rx.Observable
 
 		Rx.Observable.merge(codeChange, slideChange).debounce(250).subscribe(() => {
 			let currentInput = $(Reveal.getCurrentSlide()).find(".input");
+			if (_.isEmpty(currentInput)) {
+				return;
+			}
 			$(Reveal.getCurrentSlide()).find(".output").parent().remove();
 			let currentOutput = $("<code>").addClass("output");
 			$("<pre>").append(currentOutput).appendTo($(Reveal.getCurrentSlide()));
@@ -310,8 +370,10 @@ let x = Rx.Observable
 		let codeUnfocus = Rx.Observable.fromEvent(document, "focusout");
 
 		codeUnfocus.subscribe(() => {
-				let currentInput = $(Reveal.getCurrentSlide()).find(".input");
+			let currentInput = $(Reveal.getCurrentSlide()).find(".input");
+			if (currentInput) {
 				hljs.highlightBlock(currentInput[0]);
+			}
 		});
 
 	</script>
