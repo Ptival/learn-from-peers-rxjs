@@ -32,6 +32,24 @@
 		.half-inline {
 			width: 48% !important;
 		}
+		#drag-target {
+			background-image: url("media/logo.png");
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			height: 200px;
+			width: 200px;
+			background-color: #000000;
+			border: 1px solid #666666;
+			color: #ffffff;
+			display: none;
+			padding: 10px;
+			position: absolute;
+			cursor: move;
+			left: 275px;
+			top: 10px;
+			z-index: 3;
+		}
   </style>
 
 	<script src="lib/js/html5shiv.js"></script>
@@ -42,6 +60,8 @@
 </head>
 
 <body>
+
+	<div id="drag-target"></div>
 
 	<div class="reveal">
 
@@ -185,6 +205,26 @@ Promise.all([c, d]).then(cd => doSomething(...cd));
 				<h2>Observable</h2>
 				<p>A first-class value to represent a stream of values</p>
 				<pre><code class="typescript hljs input" data-trim contenteditable>
+const observable = Rx.Observable.create(observer => {
+  observer.onNext(0);
+  observer.onNext(42);
+//  observer.onError("OOPS!");
+  observer.onNext(2016);
+  observer.onCompleted();
+});
+
+observable.subscribe(
+  output,                   // what to do when an item is emitted
+  output,                   // what to do when the stream fails
+  () => output("Complete")  // what to do when the stream completes
+);
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Observable</h2>
+				<p>A first-class value to represent a stream of values</p>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
 const observable = Rx.Observable.fromArray([1, 2, 3]);
 
 observable.subscribe(
@@ -219,7 +259,64 @@ Rx.Observable.range(1, 5)
 			</section>
 
 			<section>
-				<h2>Example: autocomplete</h2>
+				<h2>Everything is observable ( ͡° ͜ʖ ͡°)</h2>
+				<p>You can turn any callback-based function into an observable:</p>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+const click$ = Rx.Observable.create(obs =>
+  $(document).on("click", () => obs.onNext("Click!"))
+);
+click$.subscribe(output);
+			</code></pre>
+			</section>
+
+			<section>
+				<h2><span style="color: red">Bad</span> example: autocomplete</h2>
+				<div class="row-fluid">
+        	<label for="wikipedia-input-bad">Wikipedia Search: </label>
+        	<input type="text" id="wikipedia-input-bad" style="vertical-align: middle; font-size: 30px; height: 40px" placeholder="Enter Query...">
+				</div>
+    		<div class="row-fluid">
+      		<ul id="wikipedia-output-bad"></ul>
+    		</div>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+const searchWikipediaPromise = term => $.ajax({
+  url: 'http://en.wikipedia.org/w/api.php',
+  dataType: 'jsonp',
+  data: { action: 'opensearch', format: 'json', search: term }
+}).promise();
+
+const $input = $("#wikipedia-input-bad"), $output = $("#wikipedia-output-bad");
+
+$input.on("keyup", e => {
+  const value = e.target.value;
+  if (value.length <= 2) { return; }
+  searchWikipediaPromise(value)
+  .then(data =>
+    $output.empty()
+           .append(_(data[1]).take(3).map(v => $("&lt;li>").text(v)).value())
+  );
+});
+				</code></pre>
+			</section>
+
+			<section>
+				<h2>Why was it a <span style="color: red">bad</span> example?</h2>
+				<p>It sort of worked, yes, but:</p>
+				<ul>
+					<li>A request is sent for <span style="color: red">every</span> keystroke!</li>
+					<li>It might display the completion for an <span style="color: red">outdated</span> request!</li>
+					<li>If the network intermittently fails, nothing is done to <span style="color: red">retry</span>.</li>
+				</ul>
+				<p>What I would like:</p>
+				<ul>
+					<li>Send <span style="color: green">only one</span> request when input has stabilized.</li>
+					<li>Display responses <span style="color: green">consistently</span> even if their timing is inconsistent.</li>
+					<li>Failed network requests are <span style="color: green">retried</span> a few times.</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2><span style="color: green">Better</span> example: autocomplete</h2>
 				<div class="row-fluid">
         	<label for="wikipedia-input">Wikipedia Search: </label>
         	<input type="text" id="wikipedia-input" style="vertical-align: middle; font-size: 30px; height: 40px" placeholder="Enter Query...">
@@ -227,7 +324,7 @@ Rx.Observable.range(1, 5)
     		<div class="row-fluid">
       		<ul id="wikipedia-output"></ul>
     		</div>
-				<pre><code class="typescript hljs input" data-trim contenteditable>
+				<pre><code class="typescript hljs input" data-trim contenteditable style="max-height: 300px">
 const searchWikipediaPromise = term => $.ajax({
   url: 'http://en.wikipedia.org/w/api.php',
   dataType: 'jsonp',
@@ -298,8 +395,37 @@ keyWindows$.flatMap(w => w.toArray())
 
 keyWindows$.flatMap(w => w.sequenceEqual(konami$))
            .filter(equal => equal)
-           .subscribe(() => $("#konami").html("!!! KONAMI !!!").show().fadeOut(2000));
+           .subscribe(() => $("#konami").html("!KONAMI!").show().fadeOut(2000));
 			</code></pre>
+			</section>
+
+			<section id="drag-n-drop">
+				<h2>Example: drag-n-drop</h2>
+				<pre><code class="typescript hljs input" data-trim contenteditable>
+const $dragTarget = $("#drag-target");
+
+// Note: these 2 lines are only an artifact for the slideshow code evaluator
+$dragTarget.off("mouseup").off("mousedown");
+$(document).off("mousemove");
+
+const mouseUp$   = Rx.Observable.fromEvent($dragTarget, "mouseup"),
+      mouseMove$ = Rx.Observable.fromEvent(document, "mousemove"),
+      mouseDown$ = Rx.Observable.fromEvent($dragTarget, "mousedown");
+
+mouseDown$
+  .flatMap(drag => {
+    const startX = drag.offsetX, startY = drag.offsetY;
+    return mouseMove$
+      .map(move => {
+        move.preventDefault();
+        return { left: move.clientX - startX, top: move.clientY - startY };
+      })
+      .takeUntil(mouseUp$);
+  })
+  .subscribe(pos => {
+    $dragTarget.css("left", `${pos.left}px`).css("top", `${pos.top}px`);
+  });
+				</code></pre>
 			</section>
 
 		</div>
@@ -360,6 +486,16 @@ keyWindows$.flatMap(w => w.sequenceEqual(konami$))
 
 		let slideChange = Rx.Observable.create(obs => {
 			Reveal.addEventListener('slidechanged', event => obs.onNext(event));
+		});
+
+		// when we reach the drag-n-drop slide, we show the div
+		// when we reach another slide, we hide it
+		slideChange.subscribe(event => {
+			if ($(event.currentSlide).attr("id") === "drag-n-drop") {
+				$("#drag-target").show();
+			} else {
+				$("#drag-target").hide();
+			}
 		});
 
 		Rx.Observable.merge(codeChange, slideChange).debounce(250).subscribe(() => {
