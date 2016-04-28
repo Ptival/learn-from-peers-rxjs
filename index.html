@@ -82,7 +82,7 @@
 			<section>
 				<h2>Async programming 101</h2>
 				<p>cooperative multitasking ⇒ waiting stops everything</p>
-				<button id="button-1">Click me for some bad user experience! :(</button>
+				<button id="button-1">Click me then try to change slides for some bad user experience! :(</button>
 				<p>Counter: <p id="counter-1">0</p></p>
 				<pre><code class="typescript hljs input" data-trim contenteditable>
 const sleep = duration => {
@@ -92,7 +92,7 @@ const sleep = duration => {
 let counter = 0;
 $("#button-1").off("click");
 $("#button-1").on("click", () => {
-  sleep(5000);
+  sleep(5000); // this effectively stalls the entire page for 5 seconds
   $("#counter-1").text(++counter);
 });
 				</code></pre>
