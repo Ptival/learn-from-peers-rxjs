@@ -72,10 +72,10 @@
 				<h1>Taming asynchronicity</h1>
 				<h2> with reactive programming</h2>
 				<p>
-					<small>Created by <a href="http://cs.ucsd.edu/~vrobert">Valentin Robert</a> (<a href="https://github.com/Ptival/learn-from-peers-rxjs">source</a>)</small>
+					<small>Created by <a target="_blank"  href="http://cs.ucsd.edu/~vrobert">Valentin Robert</a> (<a target="_blank"  href="https://github.com/Ptival/learn-from-peers-rxjs">source</a>)</small>
 				</p>
 				<p>
-					<small>Examples inspired by <a href="https://github.com/Reactive-Extensions/RxJS/tree/master/examples">RxJS examples</a></small>
+					<small>Examples inspired by <a target="_blank"  href="https://github.com/Reactive-Extensions/RxJS/tree/master/examples">RxJS examples</a></small>
 				</p>
 			</section>
 
@@ -96,6 +96,7 @@ $("#button-1").on("click", () => {
   $("#counter-1").text(++counter);
 });
 				</code></pre>
+				<small>Note: These slides use ES6 syntax, in particular <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions">arrow functions</a></small>
 			</section>
 
 			<section>
@@ -132,7 +133,7 @@ const data = retrieveFromTheInternet();
 doSomethingWith(data);
 					</code></pre>
 					<pre class="half-inline"><code class="typescript hljs" data-trim contenteditable>
-retrieveDataFromTheInternet(doSomethingWith);
+retrieveFromTheInternet(doSomethingWith);
 					</code></pre>
 				</div>
 			</section>
@@ -153,6 +154,8 @@ doSomethingWith(c, d);
 getA(a =>
   getB(a, b =>
     getC(b, c =>
+      // getD has to be here for c to be in scope, even though it is
+      // completely unrelated to the A B C chain
       getD(d => doSomethingWith(c, d))
     )
   )
@@ -174,13 +177,14 @@ doSomethingWith(c, d);
 				</pre></code>
 				<p>What I had to write:</p>
 				<pre><code class="typescript hljs" data-trim contenteditable>
-const c = getA
-  .then(getB)
+const c = getA()
+  .then(getB)     // short for .then(a => getB(a))
   .then(getC);
 const d = getD();
 Promise.all([c, d]).then(cd => doSomething(...cd));
 				</pre></code>
 				</code></pre>
+				<small>Note: <code>...</code> is the <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_operator">spread operator</a></small>
 			</section>
 
 			<section>
