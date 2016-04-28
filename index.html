@@ -256,7 +256,7 @@ Rx.Observable.interval(100)
 Rx.Observable.range(1, 5)
 //             .filter(x => x%2 === 1)
 //             .delay(x => Rx.Observable.just(x).delay(x*1000))
-//             .flatMap(x => _.repeat(x, x))
+//             .concatMap(x => _.repeat(x, x))
 //             .map(x => _.repeat(x, x))
              .subscribe(output);
 			</code></pre>
